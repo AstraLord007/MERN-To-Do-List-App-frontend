@@ -1,3 +1,4 @@
+import axios from "axios";
 import { useState, useEffect } from "react";
 
 const API_BASE = "http://localhost:4000";
@@ -11,12 +12,16 @@ function App() {
         GetTodos();
     },[])
 
-    const GetTodos = () => {
-        fetch(API_BASE + "/todos")
-        .then (res => res.json())
-        .then(data => setTodos(data))
-        .catch(err => console.error("Error, ", err));
+    const GetTodos = async () => {
+        try {
+            const { data } = await axios.get(API_BASE + "/todos");
+            console.log(data);
+            setTodos(data);
+        }catch (error) {
+            console.log(`Error: ${error.message}`);
+        }
     }
+
     const completeTodo = async id => {
         const data = await fetch(API_BASE + "/todo/complete/" + id)
         .then(res => res.json());
@@ -29,27 +34,25 @@ function App() {
         }));
     }
 
-    const deleteTodo = async id => {
-        const data = await fetch(API_BASE + "/todo/delete/" + id, { method: "DELETE" })
-        .then(res => res.json());
-
-        setTodos(todos => todos.filter(todo => todo._id !== data._id)); 
+    const deleteTodo = async (id) => {
+        try {
+            const { data } = await axios.delete(API_BASE + `/todo/delete/${id} `)
+            const newListTodo = todos.filter(todo => todo._id !== data._id);
+            setTodos(newListTodo); 
+        } catch (error) {
+            console.log(`Error: ${error.message}`);
+        }
     }
 
     const addTodo = async () => {
-        const data = await fetch(API_BASE + "/todo/new", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                text: newTodo
-            })
-        }).then(res => res.json());
-
-        setTodos([...todos, data]);
-        setPopupActive(false);
-        setNewTodo("");
+        try {
+            const { data }= await axios.post(API_BASE + "/todo/new", {text: newTodo})
+            setTodos([...todos, data]);
+            setPopupActive(false);
+            setNewTodo("");
+        } catch (error) {
+            console.log(`Error: ${error.message}`);
+        }
     }
 
     return (
@@ -70,7 +73,10 @@ function App() {
 
                         <div
                             className="delete-todo"
-                            onClick={() => deleteTodo(todo._id)}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                deleteTodo(todo._id);
+                              }}
                         >
                             x
                         </div>
